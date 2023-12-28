@@ -1,0 +1,29 @@
+{
+    "users": [
+      {
+        "id": "1",
+        "firstName": "Petro",
+        "lastName": "Pupkin",
+        "birthDate": "1990-11-23",
+        "framework": "angular",
+        "frameworkVersion": "1.2.1",
+        "email": "test@test.test",
+        "hobbies": [
+          "football",
+          "tennis"
+        ]
+      },
+      {
+        "id": "2",
+        "firstName": "John",
+        "lastName": "Wick",
+        "birthDate": "1989-04-15",
+        "framework": "react",
+        "frameworkVersion": "2.1.2",
+        "email": "guns@gmail.com",
+        "hobbies": [
+          "Dancing"
+        ]
+      }
+    ]
+  }
