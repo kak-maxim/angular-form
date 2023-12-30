@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl,Validators, ValidatorFn,AsyncValidatorFn  } from '@angular/forms';
 import { FormService } from './services/user.service';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { debounceTime, map } from 'rxjs/operators';
 
 type Technology = 'angular' | 'react' | 'vue';
 type TechnologyVersions = { [key in Technology]: string[] };
@@ -23,7 +23,7 @@ export class AppComponent {
   };
   currentVersions: string[] = [];
 
-  constructor(private fb: FormBuilder, private formService: FormService) {}
+  constructor(private fb: FormBuilder, private formService: FormService) { }
 
   get form(): FormGroup {
     if (!this._initialized) {
@@ -50,12 +50,14 @@ export class AppComponent {
 
   get emailAsyncValidator(): AsyncValidatorFn {
     return (control: AbstractControl): Observable<{ emailExists: boolean } | null> => {
-      return this.formService.checkEmailExists(control.value)
-        .pipe(
-          map(users => {
-            return (users && users.length > 0) ? { emailExists: true } : null;
-          })
-        );
+      if (!control.value) {
+        return of(null);
+      }
+
+      return this.formService.checkEmailExists(control.value).pipe(
+        debounceTime(500),
+        map(emailExists => emailExists ? { emailExists: true } : null)
+      );
     };
   }
 
@@ -83,9 +85,8 @@ export class AppComponent {
 
   private resetForm() {
     this.form.reset();
-    // Встановіть початкове значення для масиву хобі
     this.hobbies.clear();
-    this.addHobby(); // Додайте одне порожнє поле для хобі
+    this.addHobby();
   }
 
   onSubmit() {
@@ -103,7 +104,7 @@ export class AppComponent {
       this.formService.submitFormData(formData).subscribe(
         response => {
           console.log('Form submitted successfully!', response);
-          this.resetForm(); 
+          this.resetForm();
         },
         error => {
           console.error('Error submitting form:', error);
@@ -116,7 +117,7 @@ export class AppComponent {
 function ageValidator(minAge: number, maxAge: number): ValidatorFn {
   return (control: AbstractControl): {[key: string]: any} | null => {
     if (!control.value) {
-      return null; // повертаємо null, якщо значення пусте
+      return null;
     }
 
     const today = new Date();
