@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray, FormControl, } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl,Validators, ValidatorFn,AsyncValidatorFn  } from '@angular/forms';
+import { FormService } from './services/user.service';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 type Technology = 'angular' | 'react' | 'vue';
 type TechnologyVersions = { [key in Technology]: string[] };
@@ -20,17 +23,17 @@ export class AppComponent {
   };
   currentVersions: string[] = [];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private formService: FormService) {}
 
   get form(): FormGroup {
     if (!this._initialized) {
       this._form = this.fb.group({
         name: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(64)]],
         lastName: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(64)]],
-        dateOfBirth: ['', Validators.required],
+        dateOfBirth: ['', [Validators.required, ageValidator(18, 115)]],
         technology: ['', Validators.required],
         technologyVersion: [{ value: '', disabled: true }, Validators.required],
-        email: ['', [Validators.required, Validators.email]],
+        email: ['', [Validators.required, Validators.email], [this.emailAsyncValidator]],
         hobbies: this.fb.array([this.createHobbyControl()])
       });
 
@@ -43,6 +46,17 @@ export class AppComponent {
       this._initialized = true;
     }
     return this._form;
+  }
+
+  get emailAsyncValidator(): AsyncValidatorFn {
+    return (control: AbstractControl): Observable<{ emailExists: boolean } | null> => {
+      return this.formService.checkEmailExists(control.value)
+        .pipe(
+          map(users => {
+            return (users && users.length > 0) ? { emailExists: true } : null;
+          })
+        );
+    };
   }
 
   get hobbies(): FormArray {
@@ -66,4 +80,56 @@ export class AppComponent {
       this.hobbies.removeAt(index);
     }
   }
+
+  private resetForm() {
+    this.form.reset();
+    // Встановіть початкове значення для масиву хобі
+    this.hobbies.clear();
+    this.addHobby(); // Додайте одне порожнє поле для хобі
+  }
+
+  onSubmit() {
+    if (this.form.valid) {
+      const formData = {
+        firstName: this.form.value.name,
+        lastName: this.form.value.lastName,
+        dateOfBirth: this.form.value.dateOfBirth,
+        framework: this.form.value.technology,
+        frameworkVersion: this.form.value.technologyVersion,
+        email: this.form.value.email,
+        hobbies: this.form.value.hobbies.map((hobby: string) => ({ name: hobby }))
+      };
+
+      this.formService.submitFormData(formData).subscribe(
+        response => {
+          console.log('Form submitted successfully!', response);
+          this.resetForm(); 
+        },
+        error => {
+          console.error('Error submitting form:', error);
+        }
+      );
+    }
+  }
+}
+
+function ageValidator(minAge: number, maxAge: number): ValidatorFn {
+  return (control: AbstractControl): {[key: string]: any} | null => {
+    if (!control.value) {
+      return null; // повертаємо null, якщо значення пусте
+    }
+
+    const today = new Date();
+    const birthDate = new Date(control.value);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return (age >= minAge && age <= maxAge) ? null : { 'ageInvalid': true };
+  };
+
+
 }

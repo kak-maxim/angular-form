@@ -1,70 +1,78 @@
-<mat-card class="mat-card">
-  <form [formGroup]="form" class="fot">
-    <mat-form-field class="example-full-width">
-      <mat-label>Name</mat-label>
-      <input matInput formControlName="name">
-      <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
-      <mat-error *ngIf="form.get('name')?.hasError('maxlength')">Name must be less than 64 characters</mat-error>
-    </mat-form-field>
-
-    <mat-form-field class="example-form">
-      <mat-label>Last Name</mat-label>
-      <input matInput formControlName="lastName" type="text">
-      <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
-      <mat-error *ngIf="form.get('lastName')?.hasError('maxlength')">Last name must be less than 64 characters</mat-error>
-    </mat-form-field>
-
-    <mat-form-field>
-      <mat-label>Choose a date</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="dateOfBirth">
-      <mat-hint>MM/DD/YYYY</mat-hint>
-      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-      <mat-error *ngIf="form.get('dateOfBirth')?.hasError('required')">Date of birth is required</mat-error>
-    </mat-form-field>
-
-    <mat-form-field class="form-field" appearance="fill">
-      <mat-label>FE Technology</mat-label>
-      <mat-select formControlName="technology">
-        <mat-option value="angular">Angular</mat-option>
-        <mat-option value="react">React</mat-option>
-        <mat-option value="vue">Vue</mat-option>
-      </mat-select>
-    </mat-form-field>
-    
-    <mat-form-field class="form-field" appearance="fill">
-      <mat-label>FE Technology Version</mat-label>
-      <mat-select formControlName="technologyVersion">
-        <mat-option *ngFor="let version of currentVersions" [value]="version">{{ version }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-   
-    <mat-form-field class="example-full-width">
-      <mat-label>Email</mat-label>
-      <input type="email" matInput formControlName="email" placeholder="Ex. pat@example.com">
-      <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
-      <mat-error *ngIf="form.get('email')?.hasError('email')">Please enter a valid email address</mat-error>
-    </mat-form-field>
-
-
-    <div formArrayName="hobbies">
-      <div *ngFor="let hobbyControl of hobbies.controls; let i = index" class="hobby-item">
-        <mat-form-field class="form-field">
-          <mat-label>Hobby {{i + 1}}</mat-label>
-          <input matInput [formControlName]="i">
-          <mat-error *ngIf="hobbyControl.hasError('required')">Hobby is required</mat-error>
-          <mat-error *ngIf="hobbyControl.hasError('minlength')">Hobby length must be at least 4 characters</mat-error>
-          <mat-error *ngIf="hobbyControl.hasError('maxlength')">Hobby length must be less than 20 characters</mat-error>
-        </mat-form-field>
-        <button mat-icon-button type="button" *ngIf="canRemoveHobby()" (click)="removeHobby(i)">
-          <mat-icon>remove_circle</mat-icon>
-        </button>
-      </div>
-    </div>
-
-    <button class="add-hobby-btn" mat-raised-button type="button" (click)="addHobby()">Add Hobby</button>
-
+<div class="wrapper">
+  <mat-card class="card">
+    <form [formGroup]="form" class="fot" (ngSubmit)="onSubmit()">
+      <mat-form-field class="example-full-width mat-form">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name">
+        <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+        <mat-error *ngIf="form.get('name')?.hasError('maxlength')">Name must be less than 64 characters</mat-error>
+      </mat-form-field>
   
-</form>
-</mat-card>
+      <mat-form-field class="example-form mat-form" >
+        <mat-label>Last Name</mat-label>
+        <input matInput formControlName="lastName" type="text">
+        <mat-error *ngIf="form.get('lastName')?.hasError('required')">Last name is required</mat-error>
+        <mat-error *ngIf="form.get('lastName')?.hasError('maxlength')">Last name must be less than 64 characters</mat-error>
+      </mat-form-field>
+  
+      <mat-form-field class="mat-form">
+        <mat-label>Choose a date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="dateOfBirth">
+        <mat-hint>MM/DD/YYYY</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-error *ngIf="form.get('dateOfBirth')?.hasError('required')">Date of birth is required</mat-error>
+        <mat-error *ngIf="form.get('dateOfBirth')?.hasError('ageInvalid')">Age must be between 18 and 115</mat-error>
+      </mat-form-field>
+  
+      <mat-form-field class="form-field mat-form" appearance="fill">
+        <mat-label>FE Technology</mat-label>
+        <mat-select formControlName="technology">
+          <mat-option value="angular">Angular</mat-option>
+          <mat-option value="react">React</mat-option>
+          <mat-option value="vue">Vue</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <mat-form-field class="form-field mat-form" appearance="fill">
+        <mat-label>FE Technology Version</mat-label>
+        <mat-select formControlName="technologyVersion">
+          <mat-option *ngFor="let version of currentVersions" [value]="version">{{ version }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+  
+     
+      <mat-form-field class="example-full-width mat-form">
+        <mat-label>Email</mat-label>
+        <input type="email" matInput formControlName="email" placeholder="Ex. pat@example.com">
+        <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+        <mat-error *ngIf="form.get('email')?.hasError('email')">Please enter a valid email address</mat-error>
+        <mat-error *ngIf="form.get('email')?.hasError('emailExists')">Email already exists</mat-error>
+      </mat-form-field>
+  
+  
+      <div formArrayName="hobbies">
+        <div *ngFor="let hobbyControl of hobbies.controls; let i = index" class="hobby-item">
+          <mat-form-field class="form-field mat-form">
+            <mat-label>Hobby {{i + 1}}</mat-label>
+            <input matInput [formControlName]="i">
+            <mat-error *ngIf="hobbyControl.hasError('required')">Hobby is required</mat-error>
+            <mat-error *ngIf="hobbyControl.hasError('minlength')">Hobby length must be at least 4 characters</mat-error>
+            <mat-error *ngIf="hobbyControl.hasError('maxlength')">Hobby length must be less than 20 characters</mat-error>
+          </mat-form-field>
+          <button mat-icon-button type="button" *ngIf="canRemoveHobby()" (click)="removeHobby(i)">
+            <mat-icon>remove_circle</mat-icon>
+          </button>
+        </div>
+      </div>
+  
+      <button class="add-hobby-btn" mat-raised-button type="button" (click)="addHobby()">Add Hobby</button>
+  
+  
+      <button class="submit-btn" mat-raised-button type="submit" [disabled]="form.invalid">
+        Submit Form
+      </button>
+    
+  </form>
+  </mat-card>
+</div>
