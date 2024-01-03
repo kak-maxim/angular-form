@@ -1,8 +1,18 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl,Validators, ValidatorFn,AsyncValidatorFn  } from '@angular/forms';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  FormControl,
+  AbstractControl,
+  Validators,
+  ValidatorFn,
+  AsyncValidatorFn,
+} from '@angular/forms';
 import { FormService } from './services/user.service';
-import { Observable, of } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { debounceTime, map } from 'rxjs/operators';
+import { DatePipe } from '@angular/common';
 
 type Technology = 'angular' | 'react' | 'vue';
 type TechnologyVersions = { [key in Technology]: string[] };
@@ -12,9 +22,11 @@ type TechnologyVersions = { [key in Technology]: string[] };
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
   private _form!: FormGroup;
   private _initialized = false;
+
+  private destroy$ = new Subject<void>();
 
   technologyVersions: TechnologyVersions = {
     angular: ['1.1.1', '1.2.1', '1.3.3'],
@@ -23,25 +35,48 @@ export class AppComponent {
   };
   currentVersions: string[] = [];
 
-  constructor(private fb: FormBuilder, private formService: FormService) { }
+  constructor(private fb: FormBuilder, private formService: FormService, private datePipe: DatePipe) { }
+
+  ngOnInit(): void { }
 
   get form(): FormGroup {
+
     if (!this._initialized) {
       this._form = this.fb.group({
-        name: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(64)]],
-        lastName: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(64)]],
+        name: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(4),
+            Validators.maxLength(64),
+          ],
+        ],
+        lastName: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(4),
+            Validators.maxLength(64),
+          ],
+        ],
         dateOfBirth: ['', [Validators.required, ageValidator(18, 115)]],
         technology: ['', Validators.required],
         technologyVersion: [{ value: '', disabled: true }, Validators.required],
-        email: ['', [Validators.required, Validators.email], [this.emailAsyncValidator]],
-        hobbies: this.fb.array([this.createHobbyControl()])
+        email: [
+          '',
+          [Validators.required, Validators.email],
+          [this.emailAsyncValidator],
+        ],
+        hobbies: this.fb.array([this.createHobbyControl()]),
       });
 
-      this._form.get('technology')?.valueChanges.subscribe((val: Technology) => {
-        this.currentVersions = this.technologyVersions[val] || [];
-        this._form.get('technologyVersion')?.reset();
-        this._form.get('technologyVersion')?.enable();
-      });
+      this._form
+        .get('technology')
+        ?.valueChanges.subscribe((val: Technology) => {
+          this.currentVersions = this.technologyVersions[val] || [];
+          this._form.get('technologyVersion')?.reset();
+          this._form.get('technologyVersion')?.enable();
+        });
 
       this._initialized = true;
     }
@@ -49,14 +84,16 @@ export class AppComponent {
   }
 
   get emailAsyncValidator(): AsyncValidatorFn {
-    return (control: AbstractControl): Observable<{ emailExists: boolean } | null> => {
+    return (
+      control: AbstractControl
+    ): Observable<{ emailExists: boolean } | null> => {
       if (!control.value) {
         return of(null);
       }
 
       return this.formService.checkEmailExists(control.value).pipe(
         debounceTime(500),
-        map(emailExists => emailExists ? { emailExists: true } : null)
+        map((emailExists) => (emailExists ? { emailExists: true } : null))
       );
     };
   }
@@ -66,7 +103,11 @@ export class AppComponent {
   }
 
   createHobbyControl(): FormControl {
-    return this.fb.control('', [Validators.required, Validators.minLength(4), Validators.maxLength(20)]);
+    return this.fb.control('', [
+      Validators.required,
+      Validators.minLength(4),
+      Validators.maxLength(26),
+    ]);
   }
 
   addHobby() {
@@ -83,14 +124,15 @@ export class AppComponent {
     }
   }
 
-  private resetForm() {
-    this.form.reset();
-    this.hobbies.clear();
-    this.addHobby();
-  }
-
   onSubmit() {
     if (this.form.valid) {
+
+      const dob = this.form.get('dateOfBirth')?.value;
+      const formattedDate = this.datePipe.transform(dob, 'yyyy-MM-dd');
+      this.form.patchValue({
+        dateOfBirth: formattedDate
+      });
+
       const formData = {
         firstName: this.form.value.name,
         lastName: this.form.value.lastName,
@@ -98,28 +140,36 @@ export class AppComponent {
         framework: this.form.value.technology,
         frameworkVersion: this.form.value.technologyVersion,
         email: this.form.value.email,
-        hobbies: this.form.value.hobbies.map((hobby: string) => ({ name: hobby }))
+        hobbies: this.form.value.hobbies.map((hobby: string) => ({
+          name: hobby,
+        })),
+
       };
 
       this.formService.submitFormData(formData).subscribe(
         response => {
           console.log('Form submitted successfully!', response);
-          this.resetForm();
+          this.hobbies.removeAt(1);
         },
         error => {
           console.error('Error submitting form:', error);
         }
       );
     }
+
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }
 
 function ageValidator(minAge: number, maxAge: number): ValidatorFn {
-  return (control: AbstractControl): {[key: string]: any} | null => {
+  return (control: AbstractControl): { [key: string]: any } | null => {
     if (!control.value) {
       return null;
     }
-
     const today = new Date();
     const birthDate = new Date(control.value);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -129,8 +179,6 @@ function ageValidator(minAge: number, maxAge: number): ValidatorFn {
       age--;
     }
 
-    return (age >= minAge && age <= maxAge) ? null : { 'ageInvalid': true };
+    return age >= minAge && age <= maxAge ? null : { ageInvalid: true };
   };
-
-
 }

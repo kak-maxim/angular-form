@@ -1,6 +1,7 @@
 <div class="wrapper">
   <mat-card class="card">
-    <form [formGroup]="form" class="card-form" (ngSubmit)="onSubmit()">
+    <!-- #myForm="ngForm" myForm.resetForm()   Important best practice to clear html form > -->
+      <form #myForm="ngForm" [formGroup]="form" class="card-form" (ngSubmit)="onSubmit(); myForm.resetForm()">
       <mat-form-field class="example-full-width mat-form">
         <mat-label>Name</mat-label>
         <input matInput formControlName="name">
@@ -67,7 +68,6 @@
       </div>
   
       <button class="add-hobby-btn" mat-raised-button type="button" (click)="addHobby()">Add Hobby</button>
-  
   
       <button class="submit-btn" mat-raised-button type="submit" [disabled]="form.invalid">
         Submit Form

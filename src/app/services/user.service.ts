@@ -16,7 +16,7 @@ export class FormService {
       .pipe(map(users => users.length > 0));
   }
 
-  submitFormData(formData: any): Observable<object> {
-    return this.http.post(`${this.apiUrlUsers}/users`, formData);
+  submitFormData(formData: User): Observable<object> {
+    return this.http.post(`${this.apiUrlUsers}`, formData);
   }
 }
